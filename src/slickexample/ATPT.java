@@ -111,36 +111,18 @@ public class ATPT extends BasicGameState {
     public item1 speedpotion, speedpotion1;
     public itemwin antidote;
     public Enemy Aldo;
+    public Orb orb1;
     public ArrayList<Enemy> enemies = new ArrayList();
-
     public ArrayList<Item> stuff = new ArrayList();
-
     public ArrayList<item1> stuff1 = new ArrayList();
-
     public ArrayList<itemwin> stuffwin = new ArrayList();
-
     private boolean[][] hostiles;
-
     private static TiledMap grassMap;
-
     private static AppGameContainer app;
-
     private static Camera camera;
-
     public static int counter = 0;
-
-    // Player stuff
-    //private Animation sprite, up, down, left, right, wait;
-    /**
-     *
-     * The collision map indicating which tiles block movement - generated based
-     *
-     * on tile properties
-     */
-    // changed to match size of sprites & map
     private static final int SIZE = 32;
 
-    // screen width and height won't change
     private static final int SCREEN_WIDTH = 1000;
 
     private static final int SCREEN_HEIGHT = 750;
@@ -156,9 +138,6 @@ public class ATPT extends BasicGameState {
 
         gc.setShowFPS(false);
 
-        // *******************
-        // Scenerey Stuff
-        // ****************
         grassMap = new TiledMap("res/Map.tmx");
 
         // Ongoing checks are useful
@@ -166,23 +145,9 @@ public class ATPT extends BasicGameState {
 
         camera = new Camera(gc, grassMap);
         player = new Player();
-        // *********************************************************************************
-        // Player stuff --- these things should probably be chunked into methods
-        // and classes
-        // *********************************************************************************
 
-        // *****************************************************************
-        // Obstacles etc.
-        // build a collision map based on tile properties in the TileD map
         blocked.blocked = new boolean[grassMap.getWidth()][grassMap.getHeight()];
 
-        // System.out.println("Map height:" + grassMap.getHeight());
-        // System.out.println("Map width:" + grassMap.getWidth());
-        // There can be more than 1 layer. You'll check whatever layer has the
-        // obstacles.
-        // You could also use this for planning traps, etc.
-        // System.out.println("Number of tile layers: "
-        // +grassMap.getLayerCount());
         System.out.println("The grassmap is " + grassMap.getWidth() + "by "
                 + grassMap.getHeight());
 
@@ -190,11 +155,6 @@ public class ATPT extends BasicGameState {
 
             for (int yAxis = 0; yAxis < grassMap.getHeight(); yAxis++) {
 
-                // int tileID = grassMap.getTileId(xAxis, yAxis, 0);
-                // Why was this changed?
-                // It's a Different Layer.
-                // You should read the TMX file. It's xml, i.e.,human-readable
-                // for a reason
                 int tileID = grassMap.getTileId(xAxis, yAxis, 1);
 
                 String value = grassMap.getTileProperty(tileID,
@@ -252,7 +212,7 @@ public class ATPT extends BasicGameState {
         healthpotion1 = new Item(450, 400);
         stuff.add(healthpotion);
         stuff.add(healthpotion1);
-
+        orb1 = new Orb(player.x, player.y);
         Aldo = new Enemy(60, 60);
 
         speedpotion = new item1(100, 150);
@@ -288,6 +248,9 @@ public class ATPT extends BasicGameState {
         //g.draw(player.rect);
         g.drawString("time passed: " + counter / 1000, camera.cameraX + 600, camera.cameraY);
         // moveenemies();
+        if (orb1.isIsVisible()) {
+            orb1.orbpic.draw(orb1.getX(), orb1.getY());
+        }
 
         for (Item i : stuff) {
             if (i.isvisible) {
@@ -315,11 +278,14 @@ public class ATPT extends BasicGameState {
             }
         }
         for (Enemy e : enemies) {
-            if (e.isVisible) {
-                e.currentanime.draw(e.Bx, e.By);
-                // draw the hitbox
-                //g.draw(w.hitbox);
+            if (orb1.hitbox.intersects(e.rect)) {
+                e.isVisible = true;
+                if (e.isVisible) {
+                    e.currentanime.draw(e.Bx, e.By);
+                    // draw the hitbox
+                    //g.draw(w.hitbox);
 
+                }
             }
         }
     }
@@ -348,26 +314,35 @@ public class ATPT extends BasicGameState {
             e.move();
         }
 
-        // there are two types of fixes. A kludge and a hack. This is a kludge.
+        if (input.isKeyPressed(Input.KEY_S)) {
+//            orb1.setIsVisible(true);
+            
+            orb1.setX((int) player.x);
+            orb1.setY((int) player.y);
+            orb1.hitbox.setX(orb1.getX());
+            orb1.hitbox.setY(orb1.getY());
+            orb1.setIsVisible(!orb1.isIsVisible());
+            if (orb1.isIsVisible()) {
+            orb1.setDirection(player.getDirection());
+            }
+            // there are two types of fixes. A kludge and a hack. This is a kludge.
+        }
         if (input.isKeyDown(Input.KEY_UP)) {
 
             player.sprite = up;
-
+            player.setDirection(0);
             float fdsc = (float) (fdelta - (SIZE * .15));
 
             if (!(isBlocked(Player.x, Player.y - fdelta) || isBlocked((float) (Player.x + SIZE + 1.5), Player.y - fdelta))) {
 
                 player.sprite.update(delta);
-
-                // The lower the delta the slower the sprite will animate.
                 Player.y -= fdelta;
-
-            }
+            }// The lower the delta the slower the sprite will animate
 
         } else if (input.isKeyDown(Input.KEY_DOWN)) {
 
             player.sprite = down;
-
+            player.setDirection(2);
             if (!isBlocked(Player.x, Player.y + SIZE + fdelta)
                     || !isBlocked(Player.x + SIZE - 1, Player.y + SIZE + fdelta)) {
 
@@ -380,7 +355,7 @@ public class ATPT extends BasicGameState {
         } else if (input.isKeyDown(Input.KEY_LEFT)) {
 
             player.sprite = left;
-
+            player.setDirection(3);
             if (!(isBlocked(Player.x - fdelta, Player.y) || isBlocked(Player.x
                     - fdelta, Player.y + SIZE - 1))) {
 
@@ -393,7 +368,7 @@ public class ATPT extends BasicGameState {
         } else if (input.isKeyDown(Input.KEY_RIGHT)) {
 
             player.sprite = right;
-
+            player.setDirection(1);
             // the boolean-kludge-implementation
             if (cangoright
                     && (!(isBlocked(Player.x + SIZE + fdelta,
@@ -408,7 +383,15 @@ public class ATPT extends BasicGameState {
             // rightlimit);}
 
         }
-
+        if (orb1.isIsVisible() && orb1.getDirection() == 0) {
+            orb1.setY(orb1.getY() - 1);
+        } else if (orb1.isIsVisible() && orb1.getDirection() == 1) {
+            orb1.setX(orb1.getX() + 1);
+        } else if (orb1.isIsVisible() && orb1.getDirection() == 2) {
+            orb1.setY(orb1.getY() + 1);
+        } else if (orb1.isIsVisible() && orb1.getDirection() == 3) {
+            orb1.setX(orb1.getX() - 1);
+        }
         Player.rect.setLocation(Player.getplayershitboxX(),
                 Player.getplayershitboxY());
 
@@ -461,6 +444,9 @@ public class ATPT extends BasicGameState {
 
                 }
 
+            }
+            if (orb1.isIsVisible()) {
+                orb1.orbpic.draw(orb1.getX(), orb1.getY());
             }
         }
 

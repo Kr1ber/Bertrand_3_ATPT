@@ -29,7 +29,7 @@ public class Player {
 
     static float hitboxY = y + 8f;
 
-    private static int startX, startY, width = 30, height = 42;
+    private static int startX, startY, width = 30, height = 42, direction = 0;
 
     public static Shape rect = new Rectangle(getplayershitboxX(),
             getplayershitboxY(), width, height);
@@ -196,6 +196,14 @@ public class Player {
 
         hitboxY = getplayershitboxY();
 
+    }
+
+    public static void setDirection(int direction) {
+        Player.direction = direction;
+    }
+
+    public static int getDirection() {
+        return direction;
     }
 
 }
